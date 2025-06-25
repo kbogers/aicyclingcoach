@@ -4,6 +4,7 @@
 - `package.json` - Project dependencies and scripts.
 - `src/main.tsx` - Main entry point for the React app with AuthProvider.
 - `src/App.tsx` - Root component for routing and layout.
+- `src/index.css` - Global styles including loading spinner animations.
 - `src/lib/supabaseClient.ts` - Supabase client configuration and initialization.
 - `src/types/index.ts` - TypeScript type definitions for the application.
 - `src/styles/theme.ts` - Theme and color scheme definitions.
@@ -11,6 +12,7 @@
 - `src/hooks/useAuth.ts` - Custom hook for accessing authentication state.
 - `src/components/StravaIntegration.tsx` - Manages Strava OAuth flow and authentication button.
 - `src/components/StravaCallback.tsx` - Handles Strava OAuth callback and token exchange.
+- `src/components/Dashboard.tsx` - Main dashboard page for authenticated users.
 - `supabase/functions/strava-oauth/index.ts` - Edge Function for Strava token exchange.
 - `supabase/README.md` - Setup instructions for Supabase deployment.
 - `src/components/TrainingPlan.tsx` - Displays and manages the adaptive training plan.
