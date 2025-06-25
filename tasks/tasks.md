@@ -28,7 +28,7 @@
 
 - [ ] 1.0 Set Up Project Infrastructure
   - [x] 1.1 Initialize Vite project with React and TypeScript.
-  - [ ] 1.2 Set up version control with Git and connect to GitHub.
+  - [x] 1.2 Set up version control with Git and connect to GitHub.
   - [ ] 1.3 Configure Vercel for deployment.
   - [ ] 1.4 Set up Supabase (or alternative) for backend and database.
   - [ ] 1.5 Add basic project structure and install dependencies.
