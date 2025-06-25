@@ -2,13 +2,17 @@
 
 - `vite.config.ts` - Vite configuration for project setup and build.
 - `package.json` - Project dependencies and scripts.
-- `src/main.tsx` - Main entry point for the React app.
+- `src/main.tsx` - Main entry point for the React app with AuthProvider.
 - `src/App.tsx` - Root component for routing and layout.
 - `src/lib/supabaseClient.ts` - Supabase client configuration and initialization.
 - `src/types/index.ts` - TypeScript type definitions for the application.
 - `src/styles/theme.ts` - Theme and color scheme definitions.
-- `src/components/AuthProvider.tsx` - Handles authentication logic for Strava and Google.
-- `src/components/StravaIntegration.tsx` - Manages Strava OAuth and data import.
+- `src/components/AuthProvider.tsx` - Authentication context provider for Strava auth.
+- `src/hooks/useAuth.ts` - Custom hook for accessing authentication state.
+- `src/components/StravaIntegration.tsx` - Manages Strava OAuth flow and authentication button.
+- `src/components/StravaCallback.tsx` - Handles Strava OAuth callback and token exchange.
+- `supabase/functions/strava-oauth/index.ts` - Edge Function for Strava token exchange.
+- `supabase/README.md` - Setup instructions for Supabase deployment.
 - `src/components/TrainingPlan.tsx` - Displays and manages the adaptive training plan.
 - `src/components/CoachFeedback.tsx` - Shows daily feedback and tips to the user.
 - `src/components/EventGoalForm.tsx` - UI for users to set event goals.
@@ -28,18 +32,17 @@
 
 ## Tasks
 
-- [ ] 1.0 Set Up Project Infrastructure
+- [x] 1.0 Set Up Project Infrastructure
   - [x] 1.1 Initialize Vite project with React and TypeScript.
   - [x] 1.2 Set up version control with Git and connect to GitHub.
   - [x] 1.3 Configure Vercel for deployment.
   - [x] 1.4 Set up Supabase (or alternative) for backend and database.
   - [x] 1.5 Add basic project structure and install dependencies.
 
-- [ ] 2.0 Implement User Authentication (Strava & Google OAuth)
-  - [ ] 2.1 Set up OAuth flow for Strava.
-  - [ ] 2.2 Set up OAuth flow for Google.
-  - [ ] 2.3 Create authentication context/provider for app-wide access.
-  - [ ] 2.4 Store and manage user sessions securely.
+- [x] 2.0 Implement User Authentication (Strava OAuth)
+  - [x] 2.1 Set up OAuth flow for Strava.
+  - [x] 2.2 Create authentication context/provider for app-wide access.
+  - [x] 2.3 Store and manage user sessions securely.
 
 - [ ] 3.0 Integrate Strava Data Import and Processing
   - [ ] 3.1 Connect to Strava API to fetch user activities.
