@@ -4,6 +4,9 @@
 - `package.json` - Project dependencies and scripts.
 - `src/main.tsx` - Main entry point for the React app.
 - `src/App.tsx` - Root component for routing and layout.
+- `src/lib/supabaseClient.ts` - Supabase client configuration and initialization.
+- `src/types/index.ts` - TypeScript type definitions for the application.
+- `src/styles/theme.ts` - Theme and color scheme definitions.
 - `src/components/AuthProvider.tsx` - Handles authentication logic for Strava and Google.
 - `src/components/StravaIntegration.tsx` - Manages Strava OAuth and data import.
 - `src/components/TrainingPlan.tsx` - Displays and manages the adaptive training plan.
@@ -12,7 +15,6 @@
 - `src/components/CalendarView.tsx` - Month-based calendar interface for the training plan.
 - `src/utils/trainingLogic.ts` - Core logic for generating and updating training plans.
 - `src/utils/dataProcessing.ts` - Functions for processing Strava data (power, HR, notes).
-- `src/styles/theme.ts` - Theme and color scheme definitions.
 - `src/tests/AuthProvider.test.tsx` - Unit tests for authentication logic.
 - `src/tests/StravaIntegration.test.tsx` - Unit tests for Strava integration.
 - `src/tests/TrainingPlan.test.tsx` - Unit tests for training plan logic.
@@ -29,9 +31,9 @@
 - [ ] 1.0 Set Up Project Infrastructure
   - [x] 1.1 Initialize Vite project with React and TypeScript.
   - [x] 1.2 Set up version control with Git and connect to GitHub.
-  - [ ] 1.3 Configure Vercel for deployment.
-  - [ ] 1.4 Set up Supabase (or alternative) for backend and database.
-  - [ ] 1.5 Add basic project structure and install dependencies.
+  - [x] 1.3 Configure Vercel for deployment.
+  - [x] 1.4 Set up Supabase (or alternative) for backend and database.
+  - [x] 1.5 Add basic project structure and install dependencies.
 
 - [ ] 2.0 Implement User Authentication (Strava & Google OAuth)
   - [ ] 2.1 Set up OAuth flow for Strava.
