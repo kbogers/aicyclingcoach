@@ -46,19 +46,20 @@
   - [x] 2.2 Create authentication context/provider for app-wide access.
   - [x] 2.3 Store and manage user sessions securely.
 
-- [ ] 3.0 Integrate Strava Data Import and Processing
+- [x] 3.0 Integrate Strava Data Import and Processing
   - [x] 3.1 Connect to Strava API to fetch user activities.
-  - [ ] 3.2 Parse power and heart rate streams from activities.
-  - [ ] 3.3 Handle fallback to heart rate or time/distance if power is missing.
-  - [ ] 3.4 Extract and process private notes from Strava activities.
+  - [x] 3.2 Parse power and heart rate streams from activities.
+  - [x] 3.3 Handle fallback to heart rate or time/distance if power is missing.
+  - [x] 3.4 Extract and process private notes from Strava activities.
   - [x] 3.5 Store imported data in backend for analysis.
 
 - [ ] 4.0 Develop Adaptive Training Plan and Coaching Logic
-  - [ ] 4.1 Research and select 1-2 proven training frameworks.
-  - [ ] 4.2 Implement logic to generate initial training plan based on user profile and goals.
-  - [ ] 4.3 Implement daily plan adaptation based on new Strava data.
-  - [ ] 4.4 Generate daily feedback and tips after each session.
-  - [ ] 4.5 Adapt plan for breaks (illness, vacation) and resumption.
+  - [ ] 4.1 Build data aggregation system to collect and process activity data, time-in-zones, and private notes for AI analysis.
+  - [ ] 4.2 Research and select 1-2 proven training frameworks.
+  - [ ] 4.3 Implement logic to generate initial training plan based on user profile and goals.
+  - [ ] 4.4 Implement daily plan adaptation based on new Strava data and processed insights.
+  - [ ] 4.5 Generate daily feedback and tips after each session using processed activity data.
+  - [ ] 4.6 Adapt plan for breaks (illness, vacation) and resumption.
 
 - [ ] 5.0 Build User Interface (Calendar, Feedback, Event/Goal Setting)
   - [ ] 5.1 Design and implement a month-based calendar view for the training plan.
