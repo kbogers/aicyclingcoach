@@ -25,6 +25,7 @@
 - `src/hooks/useTrainingAnalysis.ts` - Hook for accessing processed training insights and metrics.
 - `docs/training-frameworks.md` - Documentation of selected training frameworks.
 - `src/utils/trainingPlanGenerator.ts` - Generates polarized training plans.
+- `src/utils/trainingPlanAdapter.ts` - Adapts upcoming sessions based on latest training analysis.
 - `src/tests/AuthProvider.test.tsx` - Unit tests for authentication logic.
 - `src/tests/StravaIntegration.test.tsx` - Unit tests for Strava integration.
 - `src/tests/TrainingPlan.test.tsx` - Unit tests for training plan logic.
@@ -57,11 +58,11 @@
   - [x] 3.4 Extract and process private notes from Strava activities.
   - [x] 3.5 Store imported data in backend for analysis.
 
-- [ ] 4.0 Develop Adaptive Training Plan and Coaching Logic
+- [x] 4.0 Develop Adaptive Training Plan and Coaching Logic
   - [x] 4.1 Build data aggregation system to collect and process activity data, time-in-zones, and private notes for AI analysis.
   - [x] 4.2 Research and select 1-2 proven training frameworks.
   - [x] 4.3 Implement logic to generate initial training plan based on user profile and goals.
-  - [ ] 4.4 Implement daily plan adaptation based on new Strava data and processed insights.
+  - [x] 4.4 Implement daily plan adaptation based on new Strava data and processed insights.
   - [ ] 4.5 Generate daily feedback and tips after each session using processed activity data.
   - [ ] 4.6 Adapt plan for breaks (illness, vacation) and resumption.
 
