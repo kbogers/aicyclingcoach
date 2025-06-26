@@ -76,7 +76,7 @@ export class DataService {
 
       // Use service client for operations that need to bypass RLS
       const client = this.getClient();
-      
+
       // Use upsert to handle duplicates based on user_id and strava_activity_id
       const { data, error } = await client
         .from('activities')

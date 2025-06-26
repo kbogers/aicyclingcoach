@@ -200,10 +200,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthContext.Provider
       value={{
-        ...authState,
-        login,
-        logout,
-        isTokenExpired,
+    ...authState,
+    login,
+    logout,
+    isTokenExpired,
       }}
     >
       {children}
