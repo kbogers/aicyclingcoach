@@ -28,6 +28,8 @@ export interface StravaActivity {
   max_heartrate?: number;
   average_power?: number;
   max_power?: number;
+  power_zones?: ZoneDistribution | null;
+  hr_zones?: ZoneDistribution | null;
 }
 
 // Training Plan Types
@@ -68,4 +70,14 @@ export interface CoachFeedback {
   message: string;
   type: 'motivation' | 'technique' | 'warning' | 'congratulation';
   created_at: string;
+}
+
+export interface ZoneDistribution {
+  z1: number;
+  z2: number;
+  z3: number;
+  z4: number;
+  z5: number;
+  z6?: number;
+  z7?: number;
 } 

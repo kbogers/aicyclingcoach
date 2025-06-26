@@ -1,19 +1,7 @@
-import React, { createContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabaseClient';
 import type { User } from '../types';
-
-interface StravaUserData {
-  access_token: string;
-  refresh_token: string;
-  expires_at: number;
-  athlete: {
-    id: number;
-    email?: string;
-    firstname?: string;
-    lastname?: string;
-  };
-  authenticated: boolean;
-  auth_type: string;
-}
+import { AuthContext, type StravaUserData } from '../contexts/AuthContext';
 
 interface AuthState {
   user: User | null;
@@ -26,15 +14,6 @@ interface AuthState {
   } | null;
 }
 
-interface AuthContextType extends AuthState {
-  login: (userData: StravaUserData) => void;
-  logout: () => void;
-  isTokenExpired: () => boolean;
-}
-
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
-export type { AuthContextType };
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
@@ -45,30 +24,72 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Check for existing authentication on app load
-    const checkAuth = () => {
+    const checkAuth = async () => {
       try {
         const stravaUser = localStorage.getItem('strava_user');
         if (stravaUser) {
           const userData = JSON.parse(stravaUser);
           if (userData.authenticated && userData.athlete) {
-            setAuthState({
-              user: {
-                id: userData.athlete.id.toString(),
-                email: userData.athlete.email || `strava_${userData.athlete.id}@temp.com`,
-                name: `${userData.athlete.firstname || ''} ${userData.athlete.lastname || ''}`.trim(),
-                strava_user_id: userData.athlete.id.toString(),
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-              },
-              isAuthenticated: true,
-              isLoading: false,
-              stravaTokens: {
-                access_token: userData.access_token,
-                refresh_token: userData.refresh_token,
-                expires_at: userData.expires_at,
-              },
-            });
-            return;
+            // If we have database user data stored, use it
+            if (userData.dbUser) {
+              setAuthState({
+                user: {
+                  id: userData.dbUser.id,
+                  email: userData.dbUser.email,
+                  name: userData.dbUser.name,
+                  strava_user_id: userData.dbUser.strava_user_id,
+                  created_at: userData.dbUser.created_at,
+                  updated_at: userData.dbUser.updated_at,
+                },
+                isAuthenticated: true,
+                isLoading: false,
+                stravaTokens: {
+                  access_token: userData.access_token,
+                  refresh_token: userData.refresh_token,
+                  expires_at: userData.expires_at,
+                },
+              });
+              return;
+            } else {
+              // Fallback: fetch from database if not stored
+              try {
+                const { data: dbUser, error } = await supabase
+                  .from('users')
+                  .select('*')
+                  .eq('strava_user_id', userData.athlete.id.toString())
+                  .single();
+
+                if (!error && dbUser) {
+                  const updatedUserData = {
+                    ...userData,
+                    dbUser,
+                  };
+                  
+                  localStorage.setItem('strava_user', JSON.stringify(updatedUserData));
+                  
+                  setAuthState({
+                    user: {
+                      id: dbUser.id,
+                      email: dbUser.email,
+                      name: dbUser.name,
+                      strava_user_id: dbUser.strava_user_id,
+                      created_at: dbUser.created_at,
+                      updated_at: dbUser.updated_at,
+                    },
+                    isAuthenticated: true,
+                    isLoading: false,
+                    stravaTokens: {
+                      access_token: userData.access_token,
+                      refresh_token: userData.refresh_token,
+                      expires_at: userData.expires_at,
+                    },
+                  });
+                  return;
+                }
+              } catch (dbError) {
+                console.error('Error fetching user from database:', dbError);
+              }
+            }
           }
         }
       } catch (error) {
@@ -82,43 +103,92 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth();
   }, []);
 
-  const login = (userData: StravaUserData) => {
-    const user: User = {
-      id: userData.athlete.id.toString(),
-      email: userData.athlete.email || `strava_${userData.athlete.id}@temp.com`,
-      name: `${userData.athlete.firstname || ''} ${userData.athlete.lastname || ''}`.trim(),
-      strava_user_id: userData.athlete.id.toString(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+  const login = async (userData: StravaUserData) => {
+    try {
+      // Check if the Edge Function already returned the user data
+      if (userData.dbUser) {
+        const user: User = {
+          id: userData.dbUser.id,
+          email: userData.dbUser.email,
+          name: userData.dbUser.name,
+          strava_user_id: userData.dbUser.strava_user_id,
+          created_at: userData.dbUser.created_at,
+          updated_at: userData.dbUser.updated_at,
+        };
 
-    setAuthState({
-      user,
-      isAuthenticated: true,
-      isLoading: false,
-      stravaTokens: {
-        access_token: userData.access_token,
-        refresh_token: userData.refresh_token,
-        expires_at: userData.expires_at,
-      },
-    });
+        setAuthState({
+          user,
+          isAuthenticated: true,
+          isLoading: false,
+          stravaTokens: {
+            access_token: userData.access_token,
+            refresh_token: userData.refresh_token,
+            expires_at: userData.expires_at,
+          },
+        });
 
-    // Store in localStorage
-    localStorage.setItem('strava_user', JSON.stringify({
-      ...userData,
-      authenticated: true,
-      auth_type: 'strava',
-    }));
+        // Store in localStorage
+        localStorage.setItem('strava_user', JSON.stringify({
+          ...userData,
+          authenticated: true,
+          auth_type: 'strava',
+        }));
+        return;
+      }
+
+      // Fallback: fetch from database if not included in response
+      const { data: dbUser, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('strava_user_id', userData.athlete.id.toString())
+        .single();
+
+      if (error) {
+        console.error('Error fetching user from database:', error);
+        throw new Error('Failed to fetch user data');
+      }
+
+      const user: User = {
+        id: dbUser.id, // This is the UUID from the database
+        email: dbUser.email,
+        name: dbUser.name,
+        strava_user_id: dbUser.strava_user_id,
+        created_at: dbUser.created_at,
+        updated_at: dbUser.updated_at,
+      };
+
+      setAuthState({
+        user,
+        isAuthenticated: true,
+        isLoading: false,
+        stravaTokens: {
+          access_token: userData.access_token,
+          refresh_token: userData.refresh_token,
+          expires_at: userData.expires_at,
+        },
+      });
+
+      // Store in localStorage
+      localStorage.setItem('strava_user', JSON.stringify({
+        ...userData,
+        authenticated: true,
+        auth_type: 'strava',
+        dbUser: user,
+      }));
+    } catch (error) {
+      console.error('Error during login:', error);
+      throw error;
+    }
   };
 
   const logout = () => {
+    localStorage.removeItem('strava_user');
     setAuthState({
       user: null,
       isAuthenticated: false,
       isLoading: false,
       stravaTokens: null,
     });
-    localStorage.removeItem('strava_user');
   };
 
   const isTokenExpired = (): boolean => {
@@ -127,15 +197,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return now >= authState.stravaTokens.expires_at;
   };
 
-  const contextValue: AuthContextType = {
-    ...authState,
-    login,
-    logout,
-    isTokenExpired,
-  };
-
   return (
-    <AuthContext.Provider value={contextValue}>
+    <AuthContext.Provider
+      value={{
+        ...authState,
+        login,
+        logout,
+        isTokenExpired,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

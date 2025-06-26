@@ -47,11 +47,11 @@
   - [x] 2.3 Store and manage user sessions securely.
 
 - [ ] 3.0 Integrate Strava Data Import and Processing
-  - [ ] 3.1 Connect to Strava API to fetch user activities.
+  - [x] 3.1 Connect to Strava API to fetch user activities.
   - [ ] 3.2 Parse power and heart rate streams from activities.
   - [ ] 3.3 Handle fallback to heart rate or time/distance if power is missing.
   - [ ] 3.4 Extract and process private notes from Strava activities.
-  - [ ] 3.5 Store imported data in backend for analysis.
+  - [x] 3.5 Store imported data in backend for analysis.
 
 - [ ] 4.0 Develop Adaptive Training Plan and Coaching Logic
   - [ ] 4.1 Research and select 1-2 proven training frameworks.

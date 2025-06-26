@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../hooks/useAuth';
@@ -9,8 +9,13 @@ export function StravaCallback() {
   const { login } = useAuth();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const calledRef = useRef<boolean>(false);
 
   useEffect(() => {
+    // Guard to ensure we only run the callback logic once
+    if (calledRef.current) return;
+    calledRef.current = true;
+
     const handleCallback = async () => {
       try {
         // Get authorization code from URL params
@@ -44,7 +49,7 @@ export function StravaCallback() {
         console.log('Token exchange successful:', data);
 
         // Use the auth context to log in the user
-        login(data);
+        await login(data);
 
         setStatus('success');
         
@@ -61,7 +66,7 @@ export function StravaCallback() {
     };
 
     handleCallback();
-  }, [searchParams, navigate, login]);
+  }, []);
 
   if (status === 'loading') {
     return (

@@ -77,35 +77,29 @@ serve(async (req) => {
       updated_at: new Date().toISOString(),
     };
 
-    // First try to update existing user, then insert if not found
-    const { data: existingUser } = await supabase
+    // Use upsert to handle existing/new users and return the data
+    const { data: upsertedUser, error: upsertError } = await supabase
       .from('users')
-      .select('id')
-      .eq('strava_user_id', tokenData.athlete.id.toString())
+      .upsert(
+        { ...userData, created_at: new Date().toISOString() },
+        { 
+          onConflict: 'strava_user_id',
+          ignoreDuplicates: false 
+        }
+      )
+      .select()
       .single();
-
-    let upsertError: any = null;
-    if (existingUser) {
-      // Update existing user
-      const { error } = await supabase
-        .from('users')
-        .update(userData)
-        .eq('strava_user_id', tokenData.athlete.id.toString());
-      upsertError = error;
-    } else {
-      // Insert new user
-      const { error } = await supabase
-        .from('users')
-        .insert({ ...userData, created_at: new Date().toISOString() });
-      upsertError = error;
-    }
 
     if (upsertError) {
       console.error('Error storing user data:', upsertError)
       throw new Error(`Failed to store user data: ${upsertError.message}`)
     }
 
-    console.log('User data stored successfully');
+    if (!upsertedUser) {
+      throw new Error('Failed to retrieve user data after upsert')
+    }
+
+    console.log('User data stored successfully:', upsertedUser.id);
 
     // Return the tokens and user info
     return new Response(
@@ -114,6 +108,7 @@ serve(async (req) => {
         refresh_token: tokenData.refresh_token,
         expires_at: tokenData.expires_at,
         athlete: tokenData.athlete,
+        dbUser: upsertedUser, // Include the database user data
         success: true,
       }),
       {
