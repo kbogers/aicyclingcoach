@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabaseClient';
 import { createClient } from '@supabase/supabase-js';
-import type { StravaActivity } from '../types';
+import type { StravaActivity, EventGoal } from '../types';
 import { StravaApiService } from './stravaApi';
 import { computeTimeInPowerZones, computeTimeInHrZones } from '../utils/trainingZones';
 
@@ -111,7 +111,14 @@ export class DataService {
       
       const { data, error } = await client
         .from('activities')
-        .select('*, activity_streams(time_in_power_zones, time_in_hr_zones)')
+        .select(`*, activity_streams(
+          time_in_power_zones, 
+          time_in_hr_zones,
+          time_stream,
+          watts_stream,
+          heartrate_stream,
+          distance_stream
+        )`)
         .eq('user_id', userId)
         .order('start_date', { ascending: false })
         .range(offset, offset + limit - 1);
@@ -144,7 +151,14 @@ export class DataService {
 
       const { data, error } = await client
         .from('activities')
-        .select('*, activity_streams(time_in_power_zones, time_in_hr_zones)')
+        .select(`*, activity_streams(
+          time_in_power_zones, 
+          time_in_hr_zones,
+          time_stream,
+          watts_stream,
+          heartrate_stream,
+          distance_stream
+        )`)
         .eq('user_id', userId)
         .gte('start_date', afterDateISO)
         .order('start_date', { ascending: false });
@@ -350,6 +364,97 @@ export class DataService {
     } catch (error) {
       console.error('Error storing activity streams:', error);
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  /**
+   * Get user's goals
+   */
+  async getUserGoals(userId: string): Promise<{ data: EventGoal[]; error?: string }> {
+    try {
+      const client = this.getClient();
+      
+      const { data, error } = await client
+        .from('goals')
+        .select('*')
+        .eq('user_id', userId)
+        .order('target_date', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching user goals:', error);
+        return { data: [], error: error.message };
+      }
+
+      return { data: data || [] };
+    } catch (error) {
+      console.error('Error in getUserGoals:', error);
+      return { 
+        data: [], 
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
+   * Create or update user goal
+   */
+  async upsertGoal(userId: string, goal: Partial<EventGoal>): Promise<{ success: boolean; data?: EventGoal; error?: string }> {
+    try {
+      const client = this.getClient();
+      
+      const goalData = {
+        user_id: userId,
+        description: goal.description,
+        target_date: goal.target_date,
+        ...(goal.id && { id: goal.id })
+      };
+
+      const { data, error } = await client
+        .from('goals')
+        .upsert(goalData, { onConflict: 'id' })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error upserting goal:', error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data: data as EventGoal };
+    } catch (error) {
+      console.error('Error in upsertGoal:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
+   * Delete user goal
+   */
+  async deleteGoal(userId: string, goalId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const client = this.getClient();
+      
+      const { error } = await client
+        .from('goals')
+        .delete()
+        .eq('id', goalId)
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('Error deleting goal:', error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error in deleteGoal:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
     }
   }
 } 

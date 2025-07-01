@@ -71,27 +71,44 @@ export function useStravaData(): UseStravaDataReturn {
       // Convert database activities to StravaActivity format
       const convertDbToStrava = (dbActivities: DatabaseActivity[]): StravaActivity[] => {
         return dbActivities.map(activity => {
-          const powerZones = (activity as any).activity_streams?.time_in_power_zones || null;
-          const hrZones = (activity as any).activity_streams?.time_in_hr_zones || null;
+          const streams = (activity as DatabaseActivity & { 
+            activity_streams?: {
+              time_in_power_zones?: any;
+              time_in_hr_zones?: any;
+              time_stream?: number[];
+              watts_stream?: number[];
+              heartrate_stream?: number[];
+              distance_stream?: number[];
+            }
+          }).activity_streams;
+          const powerZones = streams?.time_in_power_zones || null;
+          const hrZones = streams?.time_in_hr_zones || null;
+          
           return {
-          id: activity.strava_activity_id,
-          name: activity.name,
-          type: activity.type,
-          start_date: activity.start_date,
-          moving_time: activity.moving_time,
-          distance: activity.distance,
-          total_elevation_gain: activity.total_elevation_gain,
-          description: activity.description,
-          private_note: activity.private_note,
-          has_heartrate: activity.has_heartrate,
-          has_power: activity.has_power,
-          average_heartrate: activity.average_heartrate,
-          max_heartrate: activity.max_heartrate,
-          average_power: activity.average_power,
-          max_power: activity.max_power,
+            id: activity.strava_activity_id,
+            name: activity.name,
+            type: activity.type,
+            start_date: activity.start_date,
+            moving_time: activity.moving_time,
+            distance: activity.distance,
+            total_elevation_gain: activity.total_elevation_gain,
+            description: activity.description,
+            private_note: activity.private_note,
+            has_heartrate: activity.has_heartrate,
+            has_power: activity.has_power,
+            average_heartrate: activity.average_heartrate,
+            max_heartrate: activity.max_heartrate,
+            average_power: activity.average_power,
+            max_power: activity.max_power,
             power_zones: powerZones,
             hr_zones: hrZones,
-          } as any; // widen type for now
+            activity_streams: streams ? {
+              time_stream: streams.time_stream,
+              watts_stream: streams.watts_stream,
+              heartrate_stream: streams.heartrate_stream,
+              distance_stream: streams.distance_stream,
+            } : undefined,
+          };
         });
       };
 

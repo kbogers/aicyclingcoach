@@ -16,9 +16,15 @@
 - `supabase/functions/strava-oauth/index.ts` - Edge Function for Strava token exchange.
 - `supabase/README.md` - Setup instructions for Supabase deployment.
 - `src/components/TrainingPlan.tsx` - Displays and manages the adaptive training plan.
-- `src/components/CoachFeedback.tsx` - Shows daily feedback and tips to the user.
-- `src/components/EventGoalForm.tsx` - UI for users to set event goals.
-- `src/components/CalendarView.tsx` - Month-based calendar interface for the training plan.
+- `src/components/CoachFeedback.tsx` - Component that fetches analysis and displays daily feedback & tips.
+- `src/components/CalendarView.tsx` - Month-based calendar interface for the training plan with mini charts and maximized screen usage.
+- `src/components/MiniChart.tsx` - SVG-based mini chart component for displaying power/HR data in calendar cells.
+- `src/components/Sidebar.tsx` - Clean sidebar navigation menu with Material Icons for switching between app sections.
+- `src/components/MaterialIcon.tsx` - Reusable Material Icon component for consistent iconography throughout the app.
+- `src/components/Settings.tsx` - Settings page with training goals management and account information.
+- `src/hooks/useGoals.ts` - Custom hook for managing user training goals with CRUD operations.
+- `supabase/migrations/005_goals_table.sql` - Database migration for the goals table with RLS policies.
+- `src/hooks/usePlannedSessions.ts` - Hook that generates sample planned training sessions for calendar display.
 - `src/utils/trainingLogic.ts` - Core logic for generating and updating training plans.
 - `src/utils/dataProcessing.ts` - Functions for processing Strava data (power, HR, notes).
 - `src/services/trainingDataAggregator.ts` - Aggregates and processes activity data for AI analysis.
@@ -31,6 +37,12 @@
 - `src/tests/TrainingPlan.test.tsx` - Unit tests for training plan logic.
 - `src/tests/CoachFeedback.test.tsx` - Unit tests for feedback logic.
 - `src/tests/CalendarView.test.tsx` - Unit tests for the calendar UI.
+- `src/services/geminiService.ts` - Wrapper for securely calling the Gemini API.
+- `supabase/functions/gemini-feedback/index.ts` - Edge Function that sends training analysis to Gemini and returns feedback.
+- `src/tests/geminiService.test.ts` - Unit tests for Gemini service and Edge Function.
+- `src/services/geminiPlanService.ts` - Handles Gemini-driven training plan adaptation requests.
+- `supabase/functions/gemini-plan-adapt/index.ts` - Edge Function that passes plan & analysis to Gemini and returns an updated plan.
+- `src/tests/geminiPlanService.test.ts` - Unit tests for training plan adaptation flow.
 
 ### Notes
 
@@ -63,12 +75,13 @@
   - [x] 4.2 Research and select 1-2 proven training frameworks.
   - [x] 4.3 Implement logic to generate initial training plan based on user profile and goals.
   - [x] 4.4 Implement daily plan adaptation based on new Strava data and processed insights.
-  - [ ] 4.5 Generate daily feedback and tips after each session using processed activity data.
+  - [x] 4.5 Generate daily feedback and tips after each session using processed activity data.
   - [ ] 4.6 Adapt plan for breaks (illness, vacation) and resumption.
 
 - [ ] 5.0 Build User Interface (Calendar, Feedback, Event/Goal Setting)
-  - [ ] 5.1 Design and implement a month-based calendar view for the training plan.
-  - [ ] 5.2 Create UI for setting event goals (date, description).
+  - [x] 5.1 Design and implement a month-based calendar view for the training plan.
+  - [x] 5.15 Create a clean sidebar navigation menu with icons for Calendar, Coach, and Settings.
+  - [x] 5.2 Create UI for setting event goals (date, description).
   - [ ] 5.3 Display daily feedback and tips in a clear, motivating way.
   - [ ] 5.4 Integrate private notes into feedback and planning.
   - [ ] 5.5 Ensure all UI is accessible and user-friendly.
@@ -83,3 +96,21 @@
   - [ ] 7.2 Set up automated testing with Jest.
   - [ ] 7.3 Configure continuous deployment with Vercel and GitHub Actions.
   - [ ] 7.4 Document setup and contribution guidelines in `README.md`.
+
+- [ ] 8.0 Integrate Gemini LLM for Personalized Feedback
+  - [ ] 8.1 Evaluate Gemini API capabilities and draft prompt for cycling-specific feedback.
+  - [ ] 8.2 Configure secure storage of the Gemini API key (env variables in local, Vercel, Supabase Edge).
+  - [ ] 8.3 Create Supabase Edge Function `gemini-feedback` that accepts training analysis JSON and returns Gemini-generated feedback.
+  - [ ] 8.4 Implement `geminiService.ts` to call the Edge Function, handle streaming, caching, and error fallbacks.
+  - [ ] 8.5 Refactor `TrainingDataAggregator.generateRecommendations` to call `geminiService` (fallback to heuristic logic on failure).
+  - [ ] 8.6 Update `CoachFeedback.tsx` to display Gemini feedback and show fallback status.
+  - [ ] 8.7 Add unit and integration tests for Gemini integration, including cost/error handling and prompt validation.
+
+- [ ] 9.0 Integrate Gemini LLM for Training Plan Adaptation
+  - [ ] 9.1 Draft prompt for evaluating current training plan against athlete data & objectives, returning JSON of recommended session edits.
+  - [ ] 9.2 Create Supabase Edge Function `gemini-plan-adapt` that sends plan + analysis to Gemini and returns updated sessions.
+  - [ ] 9.3 Implement `geminiPlanService.ts` to call the edge function, manage caching, and handle retries.
+  - [ ] 9.4 Refactor `trainingPlanAdapter.ts` to use `geminiPlanService` with fallback to current heuristic logic.
+  - [ ] 9.5 Update (or create) `TrainingPlan.tsx` UI to show Gemini-adapted sessions and indicate source (LLM vs heuristic).
+  - [ ] 9.6 Implement testing suite for plan adaptation, including mocked Gemini responses and edge cases.
+  - [ ] 9.7 Monitor API usage and add safeguards for token limits and failures.

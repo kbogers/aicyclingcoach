@@ -12,6 +12,13 @@ export interface User {
 }
 
 // Training and Activity Types
+export interface ActivityStreams {
+  time_stream?: number[];
+  watts_stream?: number[];
+  heartrate_stream?: number[];
+  distance_stream?: number[];
+}
+
 export interface StravaActivity {
   id: string;
   name: string;
@@ -30,6 +37,7 @@ export interface StravaActivity {
   max_power?: number;
   power_zones?: ZoneDistribution | null;
   hr_zones?: ZoneDistribution | null;
+  activity_streams?: ActivityStreams;
 }
 
 // Training Plan Types
@@ -56,10 +64,11 @@ export interface TrainingPlan {
 // Goal and Event Types
 export interface EventGoal {
   id: string;
-  name: string;
-  date: string;
-  description: string;
-  type: 'race' | 'gran_fondo' | 'fitness' | 'other';
+  user_id: string;
+  description: string; // "What are you training for?"
+  target_date: string; // "By when do you want to achieve this?"
+  created_at: string;
+  updated_at: string;
 }
 
 // Feedback Types
