@@ -24,6 +24,9 @@
 - `src/components/Settings.tsx` - Settings page with training goals management and account information.
 - `src/hooks/useGoals.ts` - Custom hook for managing user training goals with CRUD operations.
 - `supabase/migrations/005_goals_table.sql` - Database migration for the goals table with RLS policies.
+- `src/services/geminiService.ts` - Service for integrating with Google Gemini API with fallback to heuristic analysis.
+- `src/hooks/useWeeklyCoachFeedback.ts` - Hook for generating AI-powered weekly training feedback.
+- `supabase/functions/gemini-feedback/index.ts` - Edge Function for securely calling Gemini API with training data analysis.
 - `src/hooks/usePlannedSessions.ts` - Hook that generates sample planned training sessions for calendar display.
 - `src/utils/trainingLogic.ts` - Core logic for generating and updating training plans.
 - `src/utils/dataProcessing.ts` - Functions for processing Strava data (power, HR, notes).
@@ -82,7 +85,7 @@
   - [x] 5.1 Design and implement a month-based calendar view for the training plan.
   - [x] 5.15 Create a clean sidebar navigation menu with icons for Calendar, Coach, and Settings.
   - [x] 5.2 Create UI for setting event goals (date, description).
-  - [ ] 5.3 Display daily feedback and tips in a clear, motivating way.
+  - [x] 5.3 Display daily feedback and tips in a clear, motivating way.
   - [ ] 5.4 Integrate private notes into feedback and planning.
   - [ ] 5.5 Ensure all UI is accessible and user-friendly.
 
@@ -97,13 +100,13 @@
   - [ ] 7.3 Configure continuous deployment with Vercel and GitHub Actions.
   - [ ] 7.4 Document setup and contribution guidelines in `README.md`.
 
-- [ ] 8.0 Integrate Gemini LLM for Personalized Feedback
-  - [ ] 8.1 Evaluate Gemini API capabilities and draft prompt for cycling-specific feedback.
-  - [ ] 8.2 Configure secure storage of the Gemini API key (env variables in local, Vercel, Supabase Edge).
-  - [ ] 8.3 Create Supabase Edge Function `gemini-feedback` that accepts training analysis JSON and returns Gemini-generated feedback.
-  - [ ] 8.4 Implement `geminiService.ts` to call the Edge Function, handle streaming, caching, and error fallbacks.
-  - [ ] 8.5 Refactor `TrainingDataAggregator.generateRecommendations` to call `geminiService` (fallback to heuristic logic on failure).
-  - [ ] 8.6 Update `CoachFeedback.tsx` to display Gemini feedback and show fallback status.
+- [x] 8.0 Integrate Gemini LLM for Personalized Feedback
+  - [x] 8.1 Evaluate Gemini API capabilities and draft prompt for cycling-specific feedback.
+  - [x] 8.2 Configure secure storage of the Gemini API key (env variables in local, Vercel, Supabase Edge).
+  - [x] 8.3 Create Supabase Edge Function `gemini-feedback` that accepts training analysis JSON and returns Gemini-generated feedback.
+  - [x] 8.4 Implement `geminiService.ts` to call the Edge Function, handle streaming, caching, and error fallbacks.
+  - [x] 8.5 Refactor `TrainingDataAggregator.generateRecommendations` to call `geminiService` (fallback to heuristic logic on failure).
+  - [x] 8.6 Update `CoachFeedback.tsx` to display Gemini feedback and show fallback status.
   - [ ] 8.7 Add unit and integration tests for Gemini integration, including cost/error handling and prompt validation.
 
 - [ ] 9.0 Integrate Gemini LLM for Training Plan Adaptation
