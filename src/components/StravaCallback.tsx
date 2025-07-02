@@ -76,7 +76,7 @@ export function StravaCallback() {
         <div style={{ margin: '1rem 0' }}>
           <div style={{ 
             border: '3px solid #f3f3f3',
-            borderTop: '3px solid #FC4C02',
+            borderTop: '3px solid #2563eb', // Use our theme's primary blue
             borderRadius: '50%',
             width: '30px',
             height: '30px',

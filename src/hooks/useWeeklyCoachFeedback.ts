@@ -19,6 +19,12 @@ interface UseWeeklyCoachFeedbackReturn {
   refreshFeedback: () => Promise<void>;
   lastUpdated: Date | null;
   isGeminiConfigured: boolean;
+  canRefresh: boolean;
+  rateLimitInfo: {
+    canRequest: boolean;
+    reason?: string;
+    nextAllowedTime?: Date;
+  };
 }
 
 export function useWeeklyCoachFeedback(): UseWeeklyCoachFeedbackReturn {
@@ -30,13 +36,62 @@ export function useWeeklyCoachFeedback(): UseWeeklyCoachFeedbackReturn {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [rateLimitInfo, setRateLimitInfo] = useState<{
+    canRequest: boolean;
+    reason?: string;
+    nextAllowedTime?: Date;
+  }>({ canRequest: true });
 
   const geminiService = new GeminiService();
   const dataService = new DataService();
 
+  // Check rate limits
+  const checkRateLimit = useCallback(async () => {
+    if (!user) return;
+    
+    const result = await dataService.canRequestCoachFeedback(user.id);
+    setRateLimitInfo({
+      canRequest: result.canRequest,
+      reason: result.reason,
+      nextAllowedTime: result.nextAllowedTime
+    });
+  }, [user]);
+
+  // Load cached feedback
+  const loadCachedFeedback = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      const result = await dataService.getCachedCoachFeedback(user.id);
+      if (result.data) {
+        setFeedback({
+          feedback: result.data.feedback_text,
+          source: result.data.source as 'gemini' | 'fallback' | 'error',
+          timestamp: result.data.created_at
+        });
+        setLastUpdated(new Date(result.data.created_at));
+      }
+    } catch (err) {
+      console.error('Error loading cached feedback:', err);
+    }
+  }, [user]);
+
   const refreshFeedback = useCallback(async () => {
     if (!user) {
       setError('User not authenticated');
+      return;
+    }
+
+    // Check rate limits first
+    const rateLimitResult = await dataService.canRequestCoachFeedback(user.id);
+    setRateLimitInfo({
+      canRequest: rateLimitResult.canRequest,
+      reason: rateLimitResult.reason,
+      nextAllowedTime: rateLimitResult.nextAllowedTime
+    });
+
+    if (!rateLimitResult.canRequest) {
+      setError(rateLimitResult.reason || 'Rate limit exceeded');
       return;
     }
 
@@ -98,8 +153,19 @@ export function useWeeklyCoachFeedback(): UseWeeklyCoachFeedbackReturn {
       // Get feedback from Gemini service
       const feedbackResult = await geminiService.getWeeklyFeedback(trainingData);
       
+      // Store in database
+      await dataService.storeCoachFeedback(
+        user.id,
+        feedbackResult.feedback,
+        feedbackResult.source,
+        trainingData
+      );
+
       setFeedback(feedbackResult);
       setLastUpdated(new Date());
+
+      // Update rate limit info after successful request
+      await checkRateLimit();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to generate feedback';
       setError(errorMessage);
@@ -107,14 +173,15 @@ export function useWeeklyCoachFeedback(): UseWeeklyCoachFeedbackReturn {
     } finally {
       setLoading(false);
     }
-  }, [user, recentActivities, goals, geminiService, dataService]);
+  }, [user, recentActivities, goals, checkRateLimit]);
 
-  // Auto-refresh when user changes or dependencies update
+  // Load cached feedback and rate limit info on mount
   useEffect(() => {
-    if (user && recentActivities.length > 0 && !loading) {
-      refreshFeedback();
+    if (user) {
+      loadCachedFeedback();
+      checkRateLimit();
     }
-  }, [user?.id, recentActivities.length, goals.length]); // Simplified dependencies
+  }, [user?.id, loadCachedFeedback, checkRateLimit]);
 
   return {
     feedback,
@@ -122,6 +189,8 @@ export function useWeeklyCoachFeedback(): UseWeeklyCoachFeedbackReturn {
     error,
     refreshFeedback,
     lastUpdated,
-    isGeminiConfigured: geminiService.isConfigured()
+    isGeminiConfigured: geminiService.isConfigured(),
+    canRefresh: rateLimitInfo.canRequest && !loading,
+    rateLimitInfo
   };
 } 

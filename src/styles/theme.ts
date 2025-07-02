@@ -5,6 +5,7 @@ export const theme = {
     primary: '#2563eb', // Blue
     primaryHover: '#1d4ed8',
     primaryLight: '#dbeafe',
+    primaryDark: '#1e40af',
     
     // Neutral colors
     gray50: '#f9fafb',
@@ -20,18 +21,34 @@ export const theme = {
     
     // Status colors
     success: '#10b981',
+    successLight: '#dcfce7',
+    successDark: '#059669',
     warning: '#f59e0b',
+    warningLight: '#fffbeb',
+    warningDark: '#d97706',
     error: '#ef4444',
+    errorLight: '#fef2f2',
+    errorDark: '#dc2626',
     info: '#3b82f6',
+    infoLight: '#dbeafe',
+    infoDark: '#1e40af',
     
     // Background colors
     background: '#ffffff',
     surface: '#f9fafb',
+    surfaceHover: '#f1f5f9',
+    surfaceActive: '#e2e8f0',
     
     // Text colors
     textPrimary: '#111827',
     textSecondary: '#6b7280',
     textMuted: '#9ca3af',
+    textLight: '#d1d5db',
+    
+    // Border colors
+    border: '#e5e7eb',
+    borderLight: '#f3f4f6',
+    borderDark: '#d1d5db',
   },
   
   typography: {
@@ -80,5 +97,40 @@ export const theme = {
     md: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
     lg: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
     xl: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
+  },
+};
+
+// Helper function for easier color usage (simplified)
+export const getThemeColor = (colorKey: keyof typeof theme.colors) => {
+  return theme.colors[colorKey];
+};
+
+// Common color combinations for consistency
+export const colorSchemes = {
+  primary: {
+    bg: theme.colors.primary,
+    text: '#ffffff',
+    hover: theme.colors.primaryHover,
+  },
+  secondary: {
+    bg: theme.colors.surface,
+    text: theme.colors.textPrimary,
+    hover: theme.colors.surfaceHover,
+    border: theme.colors.border,
+  },
+  success: {
+    bg: theme.colors.successLight,
+    text: theme.colors.successDark,
+    border: theme.colors.success,
+  },
+  warning: {
+    bg: theme.colors.warningLight,
+    text: theme.colors.warningDark,
+    border: theme.colors.warning,
+  },
+  error: {
+    bg: theme.colors.errorLight,
+    text: theme.colors.errorDark,
+    border: theme.colors.error,
   },
 }; 

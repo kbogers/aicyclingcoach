@@ -58,7 +58,7 @@ export function StravaIntegration({ onAuthError }: StravaIntegrationProps) {
         disabled={isLoading || !authUrl}
         className="strava-auth-button"
         style={{
-          backgroundColor: '#FC4C02',
+          backgroundColor: '#2563eb', // Use our theme's primary blue
           color: 'white',
           padding: '12px 24px',
           border: 'none',

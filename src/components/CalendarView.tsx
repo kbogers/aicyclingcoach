@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useStravaData } from '../hooks/useStravaData';
 import { useGoals } from '../hooks/useGoals';
+import { useIsMobile } from '../hooks/useMediaQuery';
+import { useSwipe } from '../hooks/useSwipe';
 import { MiniChart } from './MiniChart';
 import { MaterialIcon } from './MaterialIcon';
 import type { TrainingSession, StravaActivity, EventGoal } from '../types';
@@ -22,58 +24,110 @@ export function CalendarView({ plannedSessions = [] }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const { recentActivities } = useStravaData();
   const { goals } = useGoals();
+  const isMobile = useIsMobile();
+
+  // Swipe handlers for mobile navigation
+  const swipeHandlers = useSwipe({
+    onSwipeLeft: () => isMobile && navigateWeek('next'),
+    onSwipeRight: () => isMobile && navigateWeek('prev')
+  });
 
   // Get all activities from the last 90 days to ensure we have data for the calendar
   const extendedActivities = recentActivities; // For now, using the same data
 
   const calendarData = useMemo(() => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    
-    // Get first day of the month and first day of the calendar grid
-    const firstDayOfMonth = new Date(year, month, 1);
-    const firstDayOfCalendar = new Date(firstDayOfMonth);
-    firstDayOfCalendar.setDate(firstDayOfCalendar.getDate() - firstDayOfMonth.getDay());
-    
-    // Generate 42 days (6 weeks) for the calendar grid
-    const days: CalendarDay[] = [];
-    for (let i = 0; i < 42; i++) {
-      const date = new Date(firstDayOfCalendar);
-      date.setDate(date.getDate() + i);
+    if (isMobile) {
+      // Weekly view for mobile - generate 7 days starting from the current week
+      const startOfWeek = new Date(currentDate);
+      const dayOfWeek = startOfWeek.getDay();
+      startOfWeek.setDate(startOfWeek.getDate() - dayOfWeek); // Go to Sunday
       
-      const isCurrentMonth = date.getMonth() === month;
-      const isToday = date.toDateString() === new Date().toDateString();
+      const days: CalendarDay[] = [];
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(startOfWeek);
+        date.setDate(date.getDate() + i);
+        
+        const isToday = date.toDateString() === new Date().toDateString();
+        
+        // Filter planned sessions for this date
+        const dayPlannedSessions = plannedSessions.filter(session => {
+          const sessionDate = new Date(session.date);
+          return sessionDate.toDateString() === date.toDateString();
+        });
+        
+        // Filter actual activities for this date
+        const dayActivities = extendedActivities.filter(activity => {
+          const activityDate = new Date(activity.start_date);
+          return activityDate.toDateString() === date.toDateString();
+        });
+        
+        // Filter goals for this date
+        const dayGoals = goals.filter(goal => {
+          const goalDate = new Date(goal.target_date);
+          return goalDate.toDateString() === date.toDateString();
+        });
+        
+        days.push({
+          date,
+          isCurrentMonth: true, // All days are relevant in weekly view
+          isToday,
+          plannedSessions: dayPlannedSessions,
+          actualActivities: dayActivities,
+          goals: dayGoals,
+        });
+      }
       
-      // Filter planned sessions for this date
-      const dayPlannedSessions = plannedSessions.filter(session => {
-        const sessionDate = new Date(session.date);
-        return sessionDate.toDateString() === date.toDateString();
-      });
+      return days;
+    } else {
+      // Monthly view for desktop (existing logic)
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
       
-      // Filter actual activities for this date
-      const dayActivities = extendedActivities.filter(activity => {
-        const activityDate = new Date(activity.start_date);
-        return activityDate.toDateString() === date.toDateString();
-      });
+      // Get first day of the month and first day of the calendar grid
+      const firstDayOfMonth = new Date(year, month, 1);
+      const firstDayOfCalendar = new Date(firstDayOfMonth);
+      firstDayOfCalendar.setDate(firstDayOfCalendar.getDate() - firstDayOfMonth.getDay());
       
-      // Filter goals for this date
-      const dayGoals = goals.filter(goal => {
-        const goalDate = new Date(goal.target_date);
-        return goalDate.toDateString() === date.toDateString();
-      });
+      // Generate 42 days (6 weeks) for the calendar grid
+      const days: CalendarDay[] = [];
+      for (let i = 0; i < 42; i++) {
+        const date = new Date(firstDayOfCalendar);
+        date.setDate(date.getDate() + i);
+        
+        const isCurrentMonth = date.getMonth() === month;
+        const isToday = date.toDateString() === new Date().toDateString();
+        
+        // Filter planned sessions for this date
+        const dayPlannedSessions = plannedSessions.filter(session => {
+          const sessionDate = new Date(session.date);
+          return sessionDate.toDateString() === date.toDateString();
+        });
+        
+        // Filter actual activities for this date
+        const dayActivities = extendedActivities.filter(activity => {
+          const activityDate = new Date(activity.start_date);
+          return activityDate.toDateString() === date.toDateString();
+        });
+        
+        // Filter goals for this date
+        const dayGoals = goals.filter(goal => {
+          const goalDate = new Date(goal.target_date);
+          return goalDate.toDateString() === date.toDateString();
+        });
+        
+        days.push({
+          date,
+          isCurrentMonth,
+          isToday,
+          plannedSessions: dayPlannedSessions,
+          actualActivities: dayActivities,
+          goals: dayGoals,
+        });
+      }
       
-      days.push({
-        date,
-        isCurrentMonth,
-        isToday,
-        plannedSessions: dayPlannedSessions,
-        actualActivities: dayActivities,
-        goals: dayGoals,
-      });
+      return days;
     }
-    
-    return days;
-  }, [currentDate, plannedSessions, extendedActivities, goals]);
+  }, [currentDate, plannedSessions, extendedActivities, goals, isMobile]);
 
   const navigateMonth = (direction: 'prev' | 'next') => {
     setCurrentDate(prev => {
@@ -87,7 +141,17 @@ export function CalendarView({ plannedSessions = [] }: CalendarViewProps) {
     });
   };
 
-
+  const navigateWeek = (direction: 'prev' | 'next') => {
+    setCurrentDate(prev => {
+      const newDate = new Date(prev);
+      if (direction === 'prev') {
+        newDate.setDate(newDate.getDate() - 7);
+      } else {
+        newDate.setDate(newDate.getDate() + 7);
+      }
+      return newDate;
+    });
+  };
 
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -96,6 +160,234 @@ export function CalendarView({ plannedSessions = [] }: CalendarViewProps) {
 
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+  // Get current week range for mobile header
+  const getWeekRange = () => {
+    const startOfWeek = new Date(currentDate);
+    const dayOfWeek = startOfWeek.getDay();
+    startOfWeek.setDate(startOfWeek.getDate() - dayOfWeek);
+    
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(endOfWeek.getDate() + 6);
+    
+    return { start: startOfWeek, end: endOfWeek };
+  };
+
+  const formatWeekRange = () => {
+    const { start, end } = getWeekRange();
+    const options = { month: 'short', day: 'numeric' } as const;
+    
+    if (start.getMonth() === end.getMonth()) {
+      return `${start.toLocaleDateString('en-US', { month: 'short' })} ${start.getDate()}-${end.getDate()}, ${end.getFullYear()}`;
+    } else {
+      return `${start.toLocaleDateString('en-US', options)} - ${end.toLocaleDateString('en-US', options)}, ${end.getFullYear()}`;
+    }
+  };
+
+  if (isMobile) {
+    // Mobile Weekly View
+    return (
+      <div style={{ 
+        width: '100%',
+        height: '100vh',
+        backgroundColor: '#f8fafc',
+        display: 'flex',
+        flexDirection: 'column',
+        paddingBottom: '80px' // Space for bottom navigation
+      }}>
+        {/* Mobile Header */}
+        <div style={{ 
+          backgroundColor: 'white',
+          borderBottom: '1px solid #e5e7eb',
+          flexShrink: 0,
+          padding: '1rem'
+        }}>
+          {/* Page Title */}
+          <h1 style={{ 
+            fontSize: '1.5rem', 
+            fontWeight: '600', 
+            color: '#1e293b',
+            margin: '0 0 1rem 0',
+            textAlign: 'left'
+          }}>
+            Training calendar
+          </h1>
+          
+          {/* Week Navigation Row */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <span style={{ 
+              fontSize: '1rem', 
+              fontWeight: '500', 
+              color: '#374151'
+            }}>
+              Week of {formatWeekRange()}
+            </span>
+            
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <button
+                onClick={() => navigateWeek('prev')}
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '50%',
+                  backgroundColor: 'white',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#64748b',
+                  boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+                }}
+              >
+                <MaterialIcon name="chevron_left" size={20} />
+              </button>
+              
+              <button
+                onClick={() => navigateWeek('next')}
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '50%',
+                  backgroundColor: 'white',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#64748b',
+                  boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+                }}
+              >
+                <MaterialIcon name="chevron_right" size={20} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Scrollable Week View */}
+        <div 
+          style={{ 
+            flex: 1,
+            overflow: 'auto',
+            padding: '16px 1rem 80px 1rem' // 16px top, 80px bottom for nav space
+          }}
+          {...swipeHandlers}
+        >
+                   {calendarData.map((day, index) => {
+             const hasGoals = day.goals.length > 0;
+             
+             return (
+               <div
+                 key={index}
+                 style={{
+                   backgroundColor: 'white',
+                   borderRadius: '12px',
+                   marginBottom: '12px',
+                   border: day.isToday ? '2px solid #3b82f6' : '1px solid #e5e7eb',
+                   overflow: 'hidden'
+                 }}
+               >
+                 {/* Day Header */}
+                 <div style={{
+                   padding: '12px 16px',
+                   backgroundColor: day.isToday ? '#dbeafe' : '#f8fafc',
+                   borderBottom: '1px solid #e5e7eb',
+                   display: 'flex',
+                   justifyContent: 'space-between',
+                   alignItems: 'center'
+                 }}>
+                   <div>
+                     <div style={{
+                       fontSize: '16px',
+                       fontWeight: '600',
+                       color: day.isToday ? '#1e40af' : '#1e293b'
+                     }}>
+                       {dayNames[day.date.getDay()]} {day.date.getDate()}
+                     </div>
+                     <div style={{
+                       fontSize: '12px',
+                       color: '#64748b'
+                     }}>
+                       {monthNames[day.date.getMonth()]}
+                     </div>
+                   </div>
+                   
+                   {hasGoals && (
+                     <MaterialIcon name="flag" size={16} style={{ color: '#f59e0b' }} />
+                   )}
+                 </div>
+                 
+                 {/* Day Content */}
+                 <div style={{ padding: '16px' }}>
+                   {day.actualActivities.length > 0 ? (
+                     day.actualActivities.map((activity, actIdx) => (
+                       <div key={actIdx} style={{ marginBottom: '12px' }}>
+                         <div style={{
+                           fontSize: '14px',
+                           fontWeight: '500',
+                           color: '#374151',
+                           marginBottom: '4px'
+                         }}>
+                           {activity.name}
+                         </div>
+                         <div style={{
+                           fontSize: '12px',
+                           color: '#64748b',
+                           marginBottom: '8px'
+                         }}>
+                           {(activity.distance / 1000).toFixed(1)}km • {Math.floor(activity.moving_time / 60)}min
+                         </div>
+                         {activity.activity_streams && (
+                           <MiniChart
+                             streams={activity.activity_streams}
+                             width={240}
+                             height={60}
+                             activity={activity}
+                             mobile={true}
+                           />
+                         )}
+                       </div>
+                     ))
+                   ) : day.plannedSessions.length > 0 ? (
+                     day.plannedSessions.map((session, sessionIdx) => (
+                       <div key={sessionIdx} style={{
+                         padding: '8px 12px',
+                         backgroundColor: '#dbeafe',
+                         border: '1px dashed #3b82f6',
+                         borderRadius: '6px',
+                         fontSize: '12px',
+                         color: '#1e40af'
+                       }}>
+                         {session.type}: {session.description}
+                       </div>
+                     ))
+                   ) : (
+                     <div style={{
+                       fontSize: '12px',
+                       color: '#9ca3af',
+                       fontStyle: 'italic'
+                     }}>
+                       Rest day
+                     </div>
+                   )}
+                 </div>
+               </div>
+             );
+           })}
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop Monthly View
   return (
     <div style={{ 
       width: '100%',
@@ -105,7 +397,7 @@ export function CalendarView({ plannedSessions = [] }: CalendarViewProps) {
       flexDirection: 'column',
       overflow: 'hidden'
     }}>
-      {/* Compact Calendar Header */}
+      {/* Desktop Header */}
       <div style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 

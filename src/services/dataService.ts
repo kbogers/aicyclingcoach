@@ -457,4 +457,169 @@ export class DataService {
       };
     }
   }
+
+  /**
+   * Get cached coach feedback for a user (most recent entry)
+   */
+  async getCachedCoachFeedback(userId: string): Promise<{
+    data: {
+      id: string;
+      feedback_text: string;
+      source: string;
+      created_at: string;
+      training_data: unknown;
+    } | null;
+    error?: string;
+  }> {
+    try {
+      const client = this.getClient();
+
+      const { data, error } = await client
+        .from('coach_feedback')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      // If table exists but no rows, return null without error.
+      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+        console.error('Error fetching cached coach feedback:', error);
+        return { data: null, error: error.message };
+      }
+
+      return { data: data || null };
+    } catch (err) {
+      console.error('getCachedCoachFeedback failed:', err);
+      return {
+        data: null,
+        error: err instanceof Error ? err.message : 'Unknown error',
+      };
+    }
+  }
+
+  /**
+   * Store a coach feedback entry
+   */
+  async storeCoachFeedback(
+    userId: string,
+    feedbackText: string,
+    source: string,
+    trainingData: unknown
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const client = this.getClient();
+
+      const { error } = await client.from('coach_feedback').insert({
+        user_id: userId,
+        feedback_text: feedbackText,
+        source,
+        training_data: trainingData,
+      });
+
+      if (error) {
+        console.error('Error storing coach feedback:', error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (err) {
+      console.error('storeCoachFeedback failed:', err);
+      return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
+    }
+  }
+
+  /**
+   * Count feedback requests within a look-back period (in hours)
+   */
+  private async getCoachFeedbackRequestCount(
+    userId: string,
+    hoursBack: number
+  ): Promise<{ count: number; error?: string }> {
+    try {
+      const client = this.getClient();
+      const cutoff = new Date();
+      cutoff.setHours(cutoff.getHours() - hoursBack);
+
+      const { count, error } = await client
+        .from('coach_feedback')
+        .select('*', { head: true, count: 'exact' })
+        .eq('user_id', userId)
+        .gte('created_at', cutoff.toISOString());
+
+      if (error) {
+        console.error('Error counting coach feedback rows:', error);
+        return { count: 0, error: error.message };
+      }
+
+      return { count: count || 0 };
+    } catch (err) {
+      console.error('getCoachFeedbackRequestCount failed:', err);
+      return { count: 0, error: err instanceof Error ? err.message : 'Unknown error' };
+    }
+  }
+
+  /**
+   * Check whether the user can request new coach feedback
+   */
+  async canRequestCoachFeedback(
+    userId: string
+  ): Promise<{
+    canRequest: boolean;
+    reason?: string;
+    nextAllowedTime?: Date;
+    error?: string;
+  }> {
+    try {
+      // 1. Daily limit – max 3 requests per 24 h
+      const daily = await this.getCoachFeedbackRequestCount(userId, 24);
+      if (daily.error) {
+        return { canRequest: false, error: daily.error };
+      }
+
+      if (daily.count >= 3) {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+        return {
+          canRequest: false,
+          reason: 'Daily limit reached (3 feedback requests per day)',
+          nextAllowedTime: tomorrow,
+        };
+      }
+
+      // 2. Cool-down – 30 min between requests
+      const client = this.getClient();
+      const thirtyMinutesAgo = new Date();
+      thirtyMinutesAgo.setMinutes(thirtyMinutesAgo.getMinutes() - 30);
+
+      const { data: recent, error } = await client
+        .from('coach_feedback')
+        .select('created_at')
+        .eq('user_id', userId)
+        .gte('created_at', thirtyMinutesAgo.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        return { canRequest: false, error: error.message };
+      }
+
+      if (recent) {
+        const last = new Date(recent.created_at);
+        const nextAllowed = new Date(last.getTime() + 30 * 60 * 1000);
+        return {
+          canRequest: false,
+          reason: 'Please wait 30 minutes between feedback requests',
+          nextAllowedTime: nextAllowed,
+        };
+      }
+
+      return { canRequest: true };
+    } catch (err) {
+      console.error('canRequestCoachFeedback failed:', err);
+      return { canRequest: false, error: err instanceof Error ? err.message : 'Unknown error' };
+    }
+  }
 } 

@@ -7,9 +7,10 @@ interface MiniChartProps {
   height?: number;
   showPower?: boolean; // If false, shows HR
   activity?: StravaActivity;
+  mobile?: boolean; // If true, uses static positioning instead of absolute
 }
 
-export function MiniChart({ streams, width = 120, height = 40, showPower = true, activity }: MiniChartProps) {
+export function MiniChart({ streams, width = 120, height = 40, showPower = true, activity, mobile = false }: MiniChartProps) {
   const [tooltip, setTooltip] = useState<{ visible: boolean; x: number; y: number }>({
     visible: false,
     x: 0,
@@ -89,12 +90,15 @@ export function MiniChart({ streams, width = 120, height = 40, showPower = true,
     <>
       <div
         style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
+          position: mobile ? 'relative' : 'absolute',
+          bottom: mobile ? 'auto' : 0,
+          left: mobile ? 'auto' : 0,
+          right: mobile ? 'auto' : 0,
           height: height,
-          width: '100%'
+          width: mobile ? width : '100%',
+          backgroundColor: mobile ? '#f8fafc' : 'transparent',
+          borderRadius: mobile ? '6px' : '0',
+          border: mobile ? '1px solid #e5e7eb' : 'none'
         }}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
